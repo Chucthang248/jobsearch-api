@@ -1,0 +1,46 @@
+autheticate multiple table : https://stackoverflow.com/questions/46292391/authenticate-users-from-more-than-two-tables-in-laravel-5
+build api with passport:  https://www.twilio.com/blog/build-secure-api-php-laravel-passport
+composer remove laravel/passport
+composer require laravel/passport
+
+============ \ PASSPORT ===============
+php artisan passport:install 
+php artisan passport:keys
+php artisan vendor:publish --tag=passport-config
+php artisan passport:client
+    Client ID: 96f48e4f-a036-42db-b0c7-12b8812d6d28
+    Client secret: SVfqApXPr9TEQaQMumMEuFIHmGGoY44amQOZINDo
+============ / PASSPORT ===============
+
+Laravel cache: https://viblo.asia/p/laravel-caching-everything-gAm5yDwVldb
+    php artisan config:clear
+    php artisan config:cache
+
+    php artisan route:clear
+    php artisan route:cache
+
+    php artisan view:clear
+    php artisan view:cache
+
+# Make file
+    php artisan make:controller 
+
+    php artisan make:model Flight
+    
+# Migrate
+    php artisan make:migration create_tbl_user
+
+    php artisan migrate 
+
+    php artisan migrate:rollback --step=1
+
+# Tạo dữ liệu mẫu: https://laravel.com/docs/9.x/seeding
+    php artisan make:seeder UserSeeder
+    php artisan db:seed --class=UserSeeder
+    php artisan db:seed
+
+======== HASHPASS ===========  
+use Illuminate\Support\Facades\Hash;
+Hash::make($request->newPassword)
+
+
