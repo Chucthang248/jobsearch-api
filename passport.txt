@@ -18,3 +18,4 @@ Client secret: G3hlPgUb9rQocbD2o2RwhEd4rBPQxrK13IxHxpVJ
 
 https://www.youtube.com/watch?v=tT_U1gKvubM&t=392s
 issue token invalid: https://tutorialmeta.com/question/laravel-passport-invalid-refresh-token-token-is-not-linked-to-client
+https://www.youtube.com/watch?v=PTFPMAX_88s&t=751s
