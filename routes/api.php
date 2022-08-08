@@ -16,6 +16,7 @@ use App\Http\Controllers\AuthController;
 
 Route::post('register', [AuthController::class, 'register'])->name('register');
 Route::post('login', [AuthController::class, 'login'])->name('login');
-Route::get('refresh_token', [AuthController::class, 'refreshToken'])->name('refresh_token');
+Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('refresh_token', [AuthController::class, 'refreshToken'])->name('refresh_token');
 
 Route::get('test', [AuthController::class, 'test'])->name('test')->middleware('checklogin');

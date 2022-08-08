@@ -7,13 +7,38 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Laravel\Passport\Client;
+use Laravel\Passport\TokenRepository; 
+use Laravel\Passport\RefreshTokenRepository;
 
 class AuthController extends Controller
 {
-    
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'name' => 'required', 
+            'email' => 'required|email|unique:users', 
+            'password' => 'required', 
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $input = $request->all(); 
+        $input['password'] = bcrypt($input['password']); 
+        $resp = User::create($input); 
+
+        Client::newFactory()->asPasswordClient()->create([
+            'user_id' => $resp->id, 
+            'name' => $input['name'], 
+            'provider'=> config('auth.guards.api.provider'),
+            'redirect'=> ''
+        ]);
+
+        return response()->json(['message' => 'success']);
+    }    
+
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -29,11 +54,11 @@ class AuthController extends Controller
         if ($user) {
             if (Hash::check($request->password, $user->password)) {
 
-                $oauth_clients = DB::table('oauth_clients')->where('password_client', 1)->first();
-          
+                $oauth_clients = DB::table('oauth_clients')->where('user_id', $user->id)->first();
+
                 $response = Http::withHeaders([
                     'Content-Type' => 'application/x-www-form-urlencoded',
-                   ])->asForm()->post('http://jobsearch.local/oauth/token', [
+                   ])->asForm()->post('http://localhost/oauth/token', [
                         'grant_type' => 'password',
                         'client_id' => $oauth_clients->id,
                         'client_secret' => $oauth_clients->secret,
@@ -41,12 +66,13 @@ class AuthController extends Controller
                         'password' => $request->password,
                         'scope' => '',
                    ]);
-                 
+
                 $result = $response->getBody()->getContents();
                 $access_token = json_decode($result)->access_token;
                 $refresh_token = json_decode($result)->refresh_token;
 
-                return response()->json(['access_token' => $access_token, 'refresh_token' => $refresh_token]);
+                return response()->json(['user' => $user, 'access_token' => $access_token, 'refresh_token' => $refresh_token]);
+
             }else {
                 $response = ["message" => "Password mismatch"];
                 return response($response, 422);
@@ -57,30 +83,32 @@ class AuthController extends Controller
         } 
     }
 
-    public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), [ 
-            'name' => 'required', 
-            'email' => 'required|email|unique:users', 
-            'password' => 'required', 
+    public function logout(Request $request){
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required',
         ]);
-        if ($validator->fails()) { 
-            return response()->json(['error'=>$validator->errors()], 401);            
+
+        if ($validator->fails()) {
+            return response(['errors'=>$validator->errors()->all()], 422);
         }
-        $input = $request->all(); 
-        $input['password'] = bcrypt($input['password']); 
-        User::create($input); 
 
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/x-www-form-urlencoded',
-           ])->asForm()->post('http://jobsearch.local/oauth/clients', [
-                'name' => 'New Client Name',
-                'redirect'=> 'http://example.com/callback'
-           ]);
+        $tokenRepository = app(TokenRepository::class);
+        $refreshTokenRepository = app(RefreshTokenRepository::class);
 
-        $result = $response->getBody()->getContents();
+        $tokenRepository = new TokenRepository();
+        $user = new User();
+        $client = new Client();
 
-        return response()->json(['data' => $result]);
+        $user = $tokenRepository->findValidToken($user, $client);
+
+        // Revoke an access token...
+        //$tokenRepository->revokeAccessToken($user->id);
+
+        // Revoke all of the token's refresh tokens...
+        //$refreshTokenRepository->revokeRefreshTokensByAccessTokenId($user->id);
+
+        return response()->json(['message'=> $user]);
     }
     
     public function refreshToken(Request $request){
@@ -93,11 +121,11 @@ class AuthController extends Controller
             return response(['errors'=>$validator->errors()->all()], 422);
         }
       
-        $oauth_clients = DB::table('oauth_clients')->where('password_client', 1)->first();
+        $oauth_clients = DB::table('oauth_clients')->where('user_id', $request->input('user_id'))->first();
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/x-www-form-urlencoded',
-           ])->asForm()->post('http://jobsearch.local/oauth/token', [
+           ])->asForm()->post('http://localhost/oauth/token', [
                 'grant_type' => 'refresh_token',
                 'refresh_token' => $request->input('refresh_token'),
                 'client_id' => $oauth_clients->id,
@@ -105,12 +133,16 @@ class AuthController extends Controller
                 'scope' => '',
            ]);
          
-        $result = $response->getBody()->getContents();
+           $result = $response->getBody()->getContents();
+           $access_token = json_decode($result)->access_token;
+           $refresh_token = json_decode($result)->refresh_token;
 
-        return response()->json(['refresh_token' =>   $result]);
+           return response()->json(['access_token' => $access_token, 'refresh_token' => $refresh_token]);
     }
-
+    
     public function test(){
         return response()->json(['data' => 'DONE']);
     }
+
+
 }

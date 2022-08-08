@@ -8,14 +8,10 @@ php artisan passport:keys (create file oauth-private.key, oauth-public.key in st
 
 php artisan vendor:publish --tag=passport-config (move key from file oauth-private.key, oauth-public.key to .env PASSPORT_PRIVATE_KEY, PASSPORT_PUBLIC_KEY)
  
-Personal access client created successfully.
-Client ID: 1
-Client secret: srKdbob7fJucYNWowNYx2fjug5XGsyeJaZgPqHiR
-Password grant client created successfully.
-Client ID: 2
-Client secret: G3hlPgUb9rQocbD2o2RwhEd4rBPQxrK13IxHxpVJ
-
+php artisan passport:client --password  (tạo oauth_client để test)
 
 https://www.youtube.com/watch?v=tT_U1gKvubM&t=392s
 issue token invalid: https://tutorialmeta.com/question/laravel-passport-invalid-refresh-token-token-is-not-linked-to-client
 https://www.youtube.com/watch?v=PTFPMAX_88s&t=751s
+
+create oauth_clients : https://stackoverflow.com/questions/68400328/how-to-generate-passport-oauth-clients-for-testing-database
