@@ -89,7 +89,7 @@ class AuthCandidate extends Controller
         return response()->json(['message' => trans('messages.register.value',  ['value' => self::ROLE_NAME])]);
     }
 
-  /**
+    /**
      * 
      * @OA\Post(
      *   path="/api/candidate/login",
