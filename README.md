@@ -6,6 +6,7 @@ in container apache RUN:
                         composer install
                         composer dump-autoload
                         php artisan migrate
+                        php artisan db:seed
                         php artisan passport:install
                         php artisan vendor:publish --tag=passport-config
                         php artisan passport:keys   
