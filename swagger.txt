@@ -1,0 +1,17 @@
+- https://github.com/DarkaOnLine/L5-Swagger/wiki/Installation-&-Configuration
+- example: https://github.com/DarkaOnLine/L5-Swagger/wiki/Examples
+
+- issue: Not Found http://localhost:11152/docs/api-docs.json (reason: storage permission -> https://stackoverflow.com/questions/23411520/how-to-fix-error-laravel-log-could-not-be-opened)
+            solution :
+                     chmod -R 777 storage
+                     chmod -R 777 bootstrap/cache
+                    
+#step1: in container apache run to install: composer require "darkaonline/l5-swagger"
+
+#step2: in \app\Providers\AppServiceProvider.php add to "providers": L5Swagger\L5SwaggerServiceProvider::class
+
+#step3: in container apache run : 
+                php artisan vendor:publish --provider "L5Swagger\L5SwaggerServiceProvider"
+                php artisan l5-swagger:generate
+
+https://manhdandev.com/document-laravel-api-with-openapi-swagger.html

@@ -32,3 +32,4 @@ RUN chmod -R 775 storage
 RUN chmod -R 775 bootstrap/cache
 
 RUN chmod -R 777 storage/logs/laravel.log
+RUN chmod -R 777 storage/api-docs/api-docs.json

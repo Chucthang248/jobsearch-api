@@ -1,0 +1,7 @@
+role(id, name, parent_id)
+        => basic: admin, employeer, candidate
+            => admin: role (manager, leader, employee)
+                      => manager:
+                      => leader 
+                      => employee
+user(fullname, email, password, role_id)

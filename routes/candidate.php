@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AuthCandidate;
 use App\Http\Controllers\Auth\AuthController;
 /*
 |--------------------------------------------------------------------------
@@ -13,5 +14,8 @@ use App\Http\Controllers\Auth\AuthController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-Route::post('refresh_token', [AuthController::class, 'refreshToken'])->name('refresh_token');
+
+Route::post('register', [AuthCandidate::class, 'register'])->name('register');
+Route::post('login', [AuthCandidate::class, 'login'])->name('login');
+Route::get('test', [AuthCandidate::class, 'test'])->name('test')->middleware('checklogin');
+

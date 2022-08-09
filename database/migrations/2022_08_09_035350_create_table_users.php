@@ -3,8 +3,9 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
-class CreateUsersTable extends Migration
+class CreateTableUsers extends Migration
 {
     /**
      * Run the migrations.
@@ -17,10 +18,11 @@ class CreateUsersTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
+            $table->integer('role_id');
+            $table->foreign('role_id')->references('id')->on('roles');
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
         });
     }
 
