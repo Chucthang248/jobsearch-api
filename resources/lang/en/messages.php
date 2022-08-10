@@ -13,7 +13,8 @@ return [
     |
     */
     'register' => [
-        'value' => 'register :value success'
+        'success' => 'register success',
+        'error' => ['isExists' => ':value is exists']
     ],
 
     'logout' => [

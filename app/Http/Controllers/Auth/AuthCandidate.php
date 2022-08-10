@@ -37,6 +37,7 @@ class AuthCandidate extends Controller
      *      @OA\Property(property="name", type="string"),
      *      @OA\Property(property="email", type="string"),
      *      @OA\Property(property="password", type="string"),
+     *      @OA\Property(property="password_confirmation", type="string"),
      *   )
      *  ),
      *  @OA\Response(
@@ -72,6 +73,8 @@ class AuthCandidate extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6|confirmed',
             'password_confirmation' => 'required|min:6'
+        ],[
+            'email.unique' => trans('messages.register.error.isExists',['value'=> 'email']),
         ]);
 
         if ($validator->fails()) {
@@ -84,7 +87,7 @@ class AuthCandidate extends Controller
         $resp = User::create($input);
         $this->createOauthClient($resp->id, $input['name']);
 
-        return response()->json(['message' => trans('messages.register.value',  ['value' => self::ROLE_NAME])]);
+        return response()->json(['message' => trans('messages.register.success')]);            
     }
 
     /**
@@ -164,7 +167,7 @@ class AuthCandidate extends Controller
     }
 
     /**
-     * Does something interesting
+     * Login facebook
      *
      * @param  associative array $data
      * @return associative array
