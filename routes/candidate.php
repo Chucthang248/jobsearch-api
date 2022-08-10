@@ -17,5 +17,6 @@ use App\Http\Controllers\Auth\AuthController;
 
 Route::post('register', [AuthCandidate::class, 'register'])->name('register');
 Route::post('login', [AuthCandidate::class, 'login'])->name('login');
+Route::post('login_facebook', [AuthCandidate::class, 'loginFacebook'])->name('login_facebook');
 Route::get('test', [AuthCandidate::class, 'test'])->name('test')->middleware('checklogin');
 

@@ -18,7 +18,10 @@ return [
 
     'logout' => [
         'value' => 'logout success'
-    ]    
+    ],    
   
+    'login' => [
+        'value' => 'login success'
+    ]    
 
 ];

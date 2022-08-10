@@ -95,6 +95,9 @@ return [
 
     'fallback_locale' => 'en',
 
+    'facebook_secret_id' => env('FACEBOOK_SECRET_ID'),
+    'facebook_app_id' => env('FACEBOOK_APP_ID'),
+
     /*
     |--------------------------------------------------------------------------
     | Faker Locale

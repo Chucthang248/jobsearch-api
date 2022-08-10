@@ -7,15 +7,19 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Models\User;
-use Illuminate\Support\Facades\Http;
-use Laravel\Passport\Client;
 use App\Models\Roles;
 
 class AuthCandidate extends Controller
 {
-
     const ROLE_NAME = "candidate";
+    public $role;
+    public $fb;
+
+    function __construct() {
+        $this->role =  Roles::where('name', self::ROLE_NAME)->first();
+    }
 
     /**
      * 
@@ -63,11 +67,11 @@ class AuthCandidate extends Controller
     */
     public function register(Request $request)
     {
-        $role = Roles::where('name', self::ROLE_NAME)->first();
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'required|email|unique:users',
-            'password' => 'required',
+            'password' => 'required|min:6|confirmed',
+            'password_confirmation' => 'required|min:6'
         ]);
 
         if ($validator->fails()) {
@@ -76,15 +80,9 @@ class AuthCandidate extends Controller
 
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
-        $input['role_id'] = $role->id;
+        $input['role_id'] = $this->role->id;
         $resp = User::create($input);
-
-        Client::newFactory()->asPasswordClient()->create([
-            'user_id' => $resp->id,
-            'name' => $input['name'],
-            'provider' => config('auth.guards.api.provider'),
-            'redirect' => ''
-        ]);
+        $this->createOauthClient($resp->id, $input['name']);
 
         return response()->json(['message' => trans('messages.register.value',  ['value' => self::ROLE_NAME])]);
     }
@@ -131,33 +129,32 @@ class AuthCandidate extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required',
+            'email' => 'required|email',
             'password' => 'required',
         ]);
         if ($validator->fails()) {
             return response(['errors' => $validator->errors()->all()], 422);
         }
-        $user = User::where('email', $request->email)->first();
+
+        $user = DB::table('users')
+                ->leftJoin('roles', 'users.role_id', '=', 'roles.id')
+                ->select('users.*', 'roles.name as role_name')
+                ->where('users.email',$request->email)
+                ->first();
+
         if ($user) {
             if (Hash::check($request->password, $user->password)) {
                 $oauth_clients = DB::table('oauth_clients')->where('user_id', $user->id)->first();
 
-                $response = Http::withHeaders([
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                ])->asForm()->post(config('app.url') . '/oauth/token', [
-                    'grant_type' => 'password',
+                $resp =  $this->createOauthAccessRefreshToken([
+                    'user' => $user,
                     'client_id' => $oauth_clients->id,
                     'client_secret' => $oauth_clients->secret,
                     'username' => $request->email,
                     'password' => $request->password,
-                    'scope' => '',
                 ]);
 
-                $result = $response->getBody()->getContents();
-                $access_token = json_decode($result)->access_token;
-                $refresh_token = json_decode($result)->refresh_token;
-
-                return response()->json(['user' => $user, 'access_token' => $access_token, 'refresh_token' => $user->id . "." . $refresh_token]);
+                return response()->json($resp, 200);
             } else {
                 return response()->json(["message" => "Password mismatch"], 422);
             }
@@ -166,39 +163,51 @@ class AuthCandidate extends Controller
         }
     }
 
-    /**
-     * 
-     * @OA\Get(
-     *   path="/api/candidate/test",
-     *   tags={"Candidate"},
-     *   summary="test",
-     *   operationId="test",
-     *   security={{"bearerAuth":{}}},
-     * 
-     *  @OA\Response(
-     *       response=200,
-     *       description="successful operation",
-     *   ),
-     *   @OA\Response(
-     *      response=401,
-     *       description="Unauthenticated"
-     *   ),
-     *   @OA\Response(
-     *      response=400,
-     *      description="Bad Request"
-     *   ),
-     *   @OA\Response(
-     *      response=404,
-     *      description="not found"
-     *   ),
-     *   @OA\Response(
-     *       response=403,
-     *       description="Forbidden"
-     *   )
-     *)
-    */
-    public function test()
-    {
-        return response()->json(['access_token' => "token"]);
+    public function loginFacebook(Request $request){
+        $validator = Validator::make($request->all(), [
+            'access_token' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 401);
+        }
+
+        $user_details = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" .$request->access_token;
+        try {
+            $response = file_get_contents($user_details);
+            $response = json_decode($response);
+            $user = DB::table('users')
+            ->leftJoin('roles', 'users.role_id', '=', 'roles.id')
+            ->select('users.*', 'roles.name as role_name')
+            ->where('users.email',$response->email)
+            ->first();
+
+            $password_random = Str::uuid()->toString();
+            $createUser = NULL;
+            if ($user) {
+                $createUser = $user;
+            }else{
+                $input = $request->all();
+                $input['password'] = bcrypt($password_random);
+                $input['picture'] = $request->picture;
+                $input['role_id'] = $this->role->id;
+                $createUser = User::create($input);
+                $this->createOauthClient($createUser->id, $input['name']);
+            }
+
+            $oauth_clients = DB::table('oauth_clients')->where('user_id', $createUser->id)->first();
+            $resp =  $this->createOauthAccessRefreshToken([
+                'user' => $createUser,   
+                'client_id' => $oauth_clients->id,
+                'client_secret' => $oauth_clients->secret,
+                'username' => $request->email,
+                'password' => $password_random,
+            ]);
+
+            return response()->json($resp, 200);
+
+        } catch (\Throwable $th) {
+            return response()->json([''=> "something wrong"], 200);
+        }
     }
 }
