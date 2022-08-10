@@ -163,6 +163,12 @@ class AuthCandidate extends Controller
         }
     }
 
+    /**
+     * Does something interesting
+     *
+     * @param  associative array $data
+     * @return associative array
+    */ 
     public function loginFacebook(Request $request){
         $validator = Validator::make($request->all(), [
             'access_token' => 'required',

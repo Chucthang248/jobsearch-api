@@ -8,7 +8,7 @@ use Laravel\Passport\Client;
 trait Oauth{
 
     /**
-     * Does something interesting
+     * create oauth clients
      *
      * @param  $user_id, $name
      * @return associative array
@@ -23,7 +23,7 @@ trait Oauth{
     }
 
     /**
-     * Does something interesting
+     * create access token and refresh token
      *
      * @param  associative array $data
      * @return associative array
