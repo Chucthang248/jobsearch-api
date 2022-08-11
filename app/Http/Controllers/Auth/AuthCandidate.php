@@ -71,14 +71,14 @@ class AuthCandidate extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|confirmed',
-            'password_confirmation' => 'required|min:6'
+            'password' => 'required|string|min:6|confirmed|regex:/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/',
+            'password_confirmation' => 'required|string|min:6|regex:/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/'
         ],[
-            'email.unique' => trans('messages.register.error.isExists',['value'=> 'email']),
+            'email.unique' => trans('messages.error.isExists',['value'=> 'email']),
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 401);
+            return response()->json(['errors' => $validator->errors()], 401);
         }
 
         $input = $request->all();
@@ -87,7 +87,7 @@ class AuthCandidate extends Controller
         $resp = User::create($input);
         $this->createOauthClient($resp->id, $input['name']);
 
-        return response()->json(['message' => trans('messages.register.success')]);            
+        return response()->json(['success' => trans('messages.success.value',['value'=> 'register'])]);            
     }
 
     /**
@@ -159,10 +159,10 @@ class AuthCandidate extends Controller
 
                 return response()->json($resp, 200);
             } else {
-                return response()->json(["message" => "Password mismatch"], 422);
+                return response()->json(["errors" => trans('messages.error.invalid',['value'=> 'password'])], 422);
             }
         } else {
-            return response()->json(['error' => 'User not exists'], 401);
+            return response()->json(['errors' => trans('messages.error.notExists',['value'=> 'user'])], 401);
         }
     }
 
@@ -180,43 +180,173 @@ class AuthCandidate extends Controller
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 401);
         }
+        $enpoint = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=";
+        $resp = $this->executeLogin($enpoint, $request);
+        return response()->json(['data' => $resp], 200);
+    }
 
-        $user_details = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" .$request->access_token;
+    /**
+     * Login google
+     *
+     * @param  associative array $data
+     * @return associative array
+    */ 
+    public function loginGoogle(Request $request){
+        $validator = Validator::make($request->all(), [
+            'access_token' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 401);
+        }
+        $enpoint = "https://oauth2.googleapis.com/tokeninfo?id_token=";
+        $resp = $this->executeLogin($enpoint, $request);
+        return response()->json(['data' => $resp], 200);
+    }
+
+    /**
+     * Login linkedin
+     *
+     * @param  associative array $data
+     * @return associative array
+    */ 
+    public function loginLinkedin(Request $request){
+        $validator = Validator::make($request->all(), [
+            'code' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 401);
+        }
+
+        $client = new \GuzzleHttp\Client([
+            'base_uri' => 'https://www.linkedin.com',
+        ]);
+
+       $client_id = "78ifr7gvptfljx";
+       $client_secret = "7Xx3hx6CMuGdkajb";
+
+        $response = $client->request('POST', '/oauth/v2/accessToken', [
+            'form_params' => [
+                "grant_type" => "authorization_code",
+                "code" => $request->code,
+                "client_id" => $client_id,
+                "client_secret" => $client_secret,
+                "redirect_uri" => "http://localhost:21352/login_linkedin.php",
+            ],
+        ]);
+       $result = $response->getBody()->getContents();
+       $access_token = json_decode($result)->access_token;
+
+       // get user details
+        $client2 = new \GuzzleHttp\Client([
+            'base_uri' => 'https://api.linkedin.com',
+        ]);
+
+        $response2 = $client2->request('GET', '/rest/me', [
+            "headers" => [
+                "Authorization" => "Bearer ". $access_token
+            ]
+        ]);
+        
+        $res2 = json_decode($response2->getBody());
+        
+        // $fields = [
+        //     'id',
+        //     'firstName',
+        //     'lastName',
+        // ];
+        
+        // $response2 = $client2->request('GET', '/v2/me', [
+        //     "headers" => [
+        //         "Authorization" => "Bearer ". $access_token
+        //     ],
+        //     "query" => [
+        //         'projection' => '(' . implode(',', $fields) . ')',
+        //     ]
+        // ]);
+        
+        // $res2 = json_decode($response2->getBody());
+        
+
+        // // get email address
+        // $email = '';
+        // $response3 = $client2->request('GET', '/v2/emailAddress', [
+        //     "headers" => [
+        //         "Authorization" => "Bearer ". $access_token
+        //     ],
+        //     'query' => [
+        //         'q' => 'members',
+        //         'projection' => '(elements*(handle~))',
+        //     ]
+        // ]);
+        
+        // $res3 = json_decode($response3->getBody());
+        
+        // foreach ($res3->elements as $element) {
+        //     foreach ($element as $key=>$value) {
+        //         if ('handle~' == $key) {
+        //             $email = $value->emailAddress;
+        //         }
+        //     }
+        // }
+        
+        // $locale = $res2->firstName->preferredLocale->language . '_' . $res2->firstName->preferredLocale->country;
+        // $in_data['name'] = $res2->firstName->localized->$locale . ' ' . $res2->lastName->localized->$locale;
+        // $in_data['id'] = $res2->id;
+        // $in_data['email'] = $email;
+        //$in_data['picture'] = $picture;
+        return response()->json(['access_token' => $res2], 200);
+    }
+
+    /**
+     * Login google
+     *
+     * @param $enpoint array $data
+     * @param Request $request
+     * @return json
+    */ 
+    public function executeLogin($enpoint, $request){
+        $user_details = $enpoint.$request->access_token;
         try {
             $response = file_get_contents($user_details);
             $response = json_decode($response);
+            
             $user = DB::table('users')
             ->leftJoin('roles', 'users.role_id', '=', 'roles.id')
             ->select('users.*', 'roles.name as role_name')
             ->where('users.email',$response->email)
             ->first();
-
+            
             $password_random = Str::uuid()->toString();
             $createUser = NULL;
             if ($user) {
                 $createUser = $user;
             }else{
-                $input = $request->all();
                 $input['password'] = bcrypt($password_random);
-                $input['picture'] = $request->picture;
+                $input['name']    = $response->name;
+                $input['email']   = $response->email;
+                $input['picture'] = $response->picture;
                 $input['role_id'] = $this->role->id;
                 $createUser = User::create($input);
-                $this->createOauthClient($createUser->id, $input['name']);
+                $this->createOauthClient($createUser->id, $response->name);
             }
-
             $oauth_clients = DB::table('oauth_clients')->where('user_id', $createUser->id)->first();
             $resp =  $this->createOauthAccessRefreshToken([
                 'user' => $createUser,   
                 'client_id' => $oauth_clients->id,
                 'client_secret' => $oauth_clients->secret,
-                'username' => $request->email,
+                'username' => $response->email,
                 'password' => $password_random,
             ]);
-
-            return response()->json($resp, 200);
-
+            
+            return $resp;
         } catch (\Throwable $th) {
-            return response()->json([''=> "something wrong"], 200);
+            throw $th;
         }
+    }
+
+    public function test(){
+        return response()->json(['data' => "okay"], 200);
     }
 }

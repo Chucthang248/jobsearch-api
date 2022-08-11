@@ -12,17 +12,15 @@ return [
     | as the size rules. Feel free to tweak each of these messages here.
     |
     */
-    'register' => [
-        'success' => 'register success',
-        'error' => ['isExists' => ':value is exists']
-    ],
 
-    'logout' => [
-        'value' => 'logout success'
+    'success' => [
+        'value' => ':value success'
     ],    
-  
-    'login' => [
-        'value' => 'login success'
-    ]    
 
+    'error' => [
+        'isExists' => ':value is exists',
+        'invalid' => ':value invalid',
+        'notExists' => ':value is exists',
+    ]
+  
 ];

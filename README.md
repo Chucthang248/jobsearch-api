@@ -18,5 +18,5 @@ copy key 2 file to .env PASSPORT_PRIVATE_KEY ,PASSPORT_PUBLIC_KEY)
 view document api: http://localhost:21152/api/documentation
 
 GOOGLE_APP_ID=AIzaSyAouk0FdDCjh37Jd0Bn8OEdGPp9dhKPzCg
-GOOGLE_CLIENT_ID=519093123816-4rarknjjucdq9bbq0ia4mbspntsu8f1b.apps.googleusercontent.com
-GOOGLE_SECRET_ID=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
+GOOGLE_CLIENT_ID=519093123816-i8lg5e5tenlgpkdjva2o8kb7pm5ijttq.apps.googleusercontent.com
+GOOGLE_SECRET_ID=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
