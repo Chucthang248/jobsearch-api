@@ -17,8 +17,8 @@ use App\Http\Controllers\Auth\AuthController;
 
 Route::post('register', [AuthCandidate::class, 'register'])->name('register');
 Route::post('login', [AuthCandidate::class, 'login'])->name('login');
-Route::post('login_facebook', [AuthCandidate::class, 'loginFacebook'])->name('login_facebook');
-Route::post('login_google', [AuthCandidate::class, 'loginGoogle'])->name('login_google');
-Route::post('login_linkedin', [AuthCandidate::class, 'loginLinkedin'])->name('login_linkedin');
-Route::get('test', [AuthCandidate::class, 'test'])->name('test')->middleware('checklogin');
+Route::post('login/facebook', [AuthCandidate::class, 'loginFacebook'])->name('login_facebook');
+Route::post('login/google', [AuthCandidate::class, 'loginGoogle'])->name('login_google');
+Route::post('login/linkedin', [AuthCandidate::class, 'loginLinkedin'])->name('login_linkedin');
+Route::get('test', [AuthCandidate::class, 'test'])->name('test')->middleware(['checklogin']);
 

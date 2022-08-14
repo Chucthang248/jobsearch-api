@@ -113,33 +113,29 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'refresh_token' => 'required',
+            'user_id' => 'required',
         ]);
 
         if ($validator->fails()) {
             return response(['errors'=>$validator->errors()->all()], 422);
         }
-
-        $req = explode('.', $request->input('refresh_token'));
-        $userId = $req[0];
-        $refreshToken = $req[1];
-      
-        $oauth_clients = DB::table('oauth_clients')->where('user_id', $userId)->first();
+        $oauth_clients = DB::table('oauth_clients')->where('user_id', $request->input('user_id'))->first();
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/x-www-form-urlencoded',
            ])->asForm()->post(config('app.url').'/oauth/token', [
                 'grant_type' => 'refresh_token',
-                'refresh_token' => $refreshToken,
+                'refresh_token' => $request->input('refresh_token'),
                 'client_id' => $oauth_clients->id,
                 'client_secret' => $oauth_clients->secret,
-                'scope' => '',
+                'scope' => [],
            ]);
          
            $result = $response->getBody()->getContents();
            $access_token = json_decode($result)->access_token;
            $refresh_token = json_decode($result)->refresh_token;
 
-           return response()->json(['access_token' => $access_token, 'refresh_token' => $userId.".".$refresh_token]);
+        return response()->json(['access_token' => $access_token, 'refresh_token' => $refresh_token]);
     }
 
 }

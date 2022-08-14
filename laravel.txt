@@ -10,6 +10,7 @@ php artisan vendor:publish --tag=passport-config
 php artisan passport:client
     Client ID: 96f48e4f-a036-42db-b0c7-12b8812d6d28
     Client secret: SVfqApXPr9TEQaQMumMEuFIHmGGoY44amQOZINDo
+https://viblo.asia/p/laravel-passport-va-socialite-tao-custom-grant-lay-token-tu-tai-khoan-mang-xa-hoi-gGJ59GvGZX2
 ============ / PASSPORT ===============
 
 Laravel cache: https://viblo.asia/p/laravel-caching-everything-gAm5yDwVldb

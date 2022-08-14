@@ -22,7 +22,6 @@ class CreateTableUsers extends Migration
             $table->integer('role_id');
             $table->foreign('role_id')->references('id')->on('roles');
             $table->string('picture')->nullable();
-            $table->string('social')->nullable();
             $table->integer('isBussiness')->default(0);
             $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));

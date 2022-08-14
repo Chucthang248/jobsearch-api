@@ -6,8 +6,6 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
-use App\Helpers\Oauth;
-use App\Helpers\Shared;
 
    /**
      * @OA\Info(
@@ -33,5 +31,5 @@ use App\Helpers\Shared;
      */
 class Controller extends BaseController
 {
-    use AuthorizesRequests, DispatchesJobs, ValidatesRequests, Oauth, Shared;
+    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 }

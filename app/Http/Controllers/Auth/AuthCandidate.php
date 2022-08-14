@@ -7,18 +7,20 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Roles;
+use Laravel\Passport\Bridge\Client;
+use App\Helpers\CustomOauth2;
 
 class AuthCandidate extends Controller
 {
     const ROLE_NAME = "candidate";
     public $role;
     public $fb;
-
+    public $customOauth2; 
     function __construct() {
         $this->role =  Roles::where('name', self::ROLE_NAME)->first();
+        $this->customOauth2 = new CustomOauth2();
     }
 
     /**
@@ -85,7 +87,7 @@ class AuthCandidate extends Controller
         $input['password'] = bcrypt($input['password']);
         $input['role_id'] = $this->role->id;
         $resp = User::create($input);
-        $this->createOauthClient($resp->id, $input['name']);
+        $this->customOauth2->createOauthClient($resp->id, $input['name']);
 
         return response()->json(['success' => trans('messages.success.value',['value'=> 'register'])]);            
     }
@@ -156,7 +158,8 @@ class AuthCandidate extends Controller
                     'username' => $request->email,
                     'password' => $request->password,
                 ]);
-
+                $data['user'] = $user;
+                $data['token'] = $resp;
                 return response()->json($resp, 200);
             } else {
                 return response()->json(["errors" => trans('messages.error.invalid',['value'=> 'password'])], 422);
@@ -318,35 +321,34 @@ class AuthCandidate extends Controller
             ->where('users.email',$response->email)
             ->first();
             
-            $password_random = Str::uuid()->toString();
             $createUser = NULL;
             if ($user) {
                 $createUser = $user;
             }else{
-                $input['password'] = bcrypt($password_random);
+                $input['password'] = bcrypt($response->email) ;
                 $input['name']    = $response->name;
                 $input['email']   = $response->email;
                 $input['picture'] = $response->picture;
                 $input['role_id'] = $this->role->id;
                 $createUser = User::create($input);
-                $this->createOauthClient($createUser->id, $response->name);
+                $this->customOauth2->createOauthClient($createUser->id, $response->name);
             }
             $oauth_clients = DB::table('oauth_clients')->where('user_id', $createUser->id)->first();
-            $resp =  $this->createOauthAccessRefreshToken([
-                'user' => $createUser,   
-                'client_id' => $oauth_clients->id,
-                'client_secret' => $oauth_clients->secret,
-                'username' => $response->email,
-                'password' => $password_random,
-            ]);
-            
-            return $resp;
+
+            $this->customOauth2->setUserId($createUser->id);
+            $this->customOauth2->setClientSecret($oauth_clients->secret);
+            $client = new Client($oauth_clients->id, $oauth_clients->name, $oauth_clients->redirect);
+            $resp = $this->customOauth2->createToken($client);
+            $data['user'] = $createUser;
+            $data['token'] = $resp->json();
+            return response()->json($data);
+
         } catch (\Throwable $th) {
             throw $th;
         }
     }
 
-    public function test(){
-        return response()->json(['data' => "okay"], 200);
+    public function test(Request $request){
+        return response()->json(['data' => "ok"], 200);
     }
 }
